@@ -60,6 +60,14 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
 )
+
+# Linux 下配置 $ORIGIN RPATH，确保分发后优先使用打包自带的 lib 库
+if(UNIX AND NOT APPLE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN"
+    )
+endif()
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         INNOSTUDIO_APP_VERSION="${PROJECT_VERSION}"
 )
@@ -117,12 +125,10 @@ install(TARGETS ${PROJECT_NAME}
         LIBRARY DESTINATION lib
 )
 
-# 为 macOS 应用包和 Windows 程序部署 Qt / QML 依赖。
-if(APPLE OR WIN32)
-    qt_generate_deploy_qml_app_script(
-        TARGET ${PROJECT_NAME}
-        OUTPUT_SCRIPT deploy_script
-        NO_UNSUPPORTED_PLATFORM_ERROR
-    )
-    install(SCRIPT ${deploy_script})
-endif()
+# 为所有系统（Windows, Linux, macOS）自动部署 Qt 动态库与 QML 模块依赖
+qt_generate_deploy_qml_app_script(
+    TARGET ${PROJECT_NAME}
+    OUTPUT_SCRIPT deploy_script
+    NO_UNSUPPORTED_PLATFORM_ERROR
+)
+install(SCRIPT ${deploy_script})
