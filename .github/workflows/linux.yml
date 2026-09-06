@@ -1,0 +1,71 @@
+name: Linux Build
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Linux-${{ matrix.arch }}
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            qt_arch: gcc_64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          version: 1.11.1
+
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libgl1-mesa-dev libxkbcommon-x11-0 \
+            libxkbcommon-dev libvulkan-dev libfontconfig1-dev \
+            libfreetype6-dev libx11-xcb-dev libxext-dev libxfixes-dev \
+            libxi-dev libxrender-dev libxcb1-dev libxcb-glx0-dev \
+            libxcb-keysyms1-dev libxcb-image0-dev libxcb-shm0-dev \
+            libxcb-icccm4-dev libxcb-sync-dev libxcb-xfixes0-dev \
+            libxcb-shape0-dev libxcb-randr0-dev libxcb-render-util0-dev \
+            libxcb-xinerama0-dev libxcb-xkb-dev
+
+      - name: Install Qt 6.5.3
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.5'
+          arch: ${{ matrix.qt_arch }}
+          cache: true
+          cache-key-prefix: 'install-qt-linux-${{ matrix.qt_arch }}'
+
+      - name: Setup Environment
+        shell: bash
+        run: |
+          echo "CMAKE_PREFIX_PATH=$QT_ROOT_DIR" >> $GITHUB_ENV
+          echo "CMAKE_GENERATOR=Ninja" >> $GITHUB_ENV
+
+      - name: Run CMake Preset Release
+        run: |
+          cmake --workflow --preset release
+
+      - name: Package Dist
+        shell: bash
+        run: |
+          mkdir -p package
+          tar -czvf "package/InnoStudio-Linux-${{ matrix.arch }}.tar.gz" -C dist .
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: InnoStudio-Linux-${{ matrix.arch }}
+          path: package/*
+          retention-days: 7

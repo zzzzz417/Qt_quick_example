@@ -97,6 +97,19 @@ if(WIN32)
     endif()
 endif()
 
+# 修复 macOS-14 (Xcode 15+) 缺失 AGL.framework 导致的链接错误
+if(APPLE)
+    set(STUB_FRAMEWORK_DIR "${CMAKE_BINARY_DIR}/Frameworks")
+    file(MAKE_DIRECTORY "${STUB_FRAMEWORK_DIR}/AGL.framework")
+
+    # 编译一个合法的 Mach-O 动态库桩（避免 0 字节文件导致 ld 段错误崩溃）
+    execute_process(
+        COMMAND clang -dynamiclib -install_name @rpath/AGL.framework/AGL -o "${STUB_FRAMEWORK_DIR}/AGL.framework/AGL" -xc /dev/null
+        OUTPUT_QUIET ERROR_QUIET
+    )
+    target_link_options(${PROJECT_NAME} PRIVATE "-F${STUB_FRAMEWORK_DIR}")
+endif()
+
 # 安装规则
 install(TARGETS ${PROJECT_NAME}
         BUNDLE DESTINATION .

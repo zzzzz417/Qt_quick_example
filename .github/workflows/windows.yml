@@ -1,0 +1,58 @@
+name: Windows Build
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Windows-${{ matrix.arch }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            qt_arch: win64_mingw
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Ninja
+        uses: ashutoshvarma/setup-ninja@master
+        with:
+          version: 1.11.1
+
+      - name: Install Qt 6.5.3
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.5.3'
+          arch: ${{ matrix.qt_arch }}
+          cache: true
+          cache-key-prefix: 'install-qt-windows-${{ matrix.qt_arch }}'
+
+      - name: Setup Environment
+        shell: bash
+        run: |
+          echo "CMAKE_PREFIX_PATH=$QT_ROOT_DIR" >> $GITHUB_ENV
+          echo "CMAKE_GENERATOR=Ninja" >> $GITHUB_ENV
+
+      - name: Run CMake Preset Release
+        run: |
+          cmake --workflow --preset release
+
+      - name: Package Dist
+        shell: bash
+        run: |
+          mkdir -p package
+          7z a "package/InnoStudio-Windows-${{ matrix.arch }}.zip" ./dist/*
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: InnoStudio-Windows-${{ matrix.arch }}
+          path: package/*
+          retention-days: 7
