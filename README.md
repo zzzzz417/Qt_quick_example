@@ -1,4 +1,4 @@
-# innoStudio
+# Qt_quick_example
 
 C++20 / Qt Quick 模板。
 
