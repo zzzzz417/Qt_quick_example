@@ -1,0 +1,50 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "local-base",
+      "hidden": true,
+      "inherits": "base",
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_PREFIX_PATH": "/absolute/path/to/Qt/6.5.x/<kit>"
+      }
+    },
+    {
+      "name": "local-debug",
+      "inherits": ["debug", "local-base"]
+    },
+    {
+      "name": "local-release",
+      "inherits": ["release", "local-base"]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "local-debug",
+      "inherits": "debug",
+      "configurePreset": "local-debug"
+    },
+    {
+      "name": "local-release",
+      "inherits": "release",
+      "configurePreset": "local-release"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "local-debug",
+      "steps": [
+        { "type": "configure", "name": "local-debug" },
+        { "type": "build", "name": "local-debug" }
+      ]
+    },
+    {
+      "name": "local-release",
+      "steps": [
+        { "type": "configure", "name": "local-release" },
+        { "type": "build", "name": "local-release" }
+      ]
+    }
+  ]
+}
