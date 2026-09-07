@@ -1,14 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(InnoStudio VERSION 1.0.0 LANGUAGES C CXX)
 
-# 固定 Qt LTS 系列，允许该系列的补丁更新。
-set(INNOSTUDIO_QT_SERIES 6.5)
-string(REPLACE "." ";" qt_version_parts "${INNOSTUDIO_QT_SERIES}")
-list(GET qt_version_parts 0 qt_major_version)
-list(GET qt_version_parts 1 qt_minor_version)
-math(EXPR qt_next_minor_version "${qt_minor_version} + 1")
-set(INNOSTUDIO_QT_VERSION_RANGE
-        "${INNOSTUDIO_QT_SERIES}...<${qt_major_version}.${qt_next_minor_version}")
+# Qt 6.5 是最低支持版本，允许使用更新的 Qt 6 版本构建。
+set(INNOSTUDIO_QT_MIN_VERSION 6.5)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -38,7 +32,7 @@ if(PROJECT_SOURCE_FILES STREQUAL "")
     message(FATAL_ERROR "未在 src 目录下检测到源码文件，请至少添加一个 .cpp/.c 文件。")
 endif()
 
-find_package(Qt6 ${INNOSTUDIO_QT_VERSION_RANGE} REQUIRED COMPONENTS
+find_package(Qt6 ${INNOSTUDIO_QT_MIN_VERSION} REQUIRED COMPONENTS
         Core
         Gui
         Qml
@@ -46,8 +40,12 @@ find_package(Qt6 ${INNOSTUDIO_QT_VERSION_RANGE} REQUIRED COMPONENTS
         QuickControls2
 )
 
-# 使用所选 Qt LTS 系列的标准设置与 QML 策略。
-qt_standard_project_setup(REQUIRES ${INNOSTUDIO_QT_SERIES})
+# 以最低支持的 Qt 版本启用标准设置与 QML 策略。
+qt_standard_project_setup(REQUIRES ${INNOSTUDIO_QT_MIN_VERSION})
+
+if(QT_KNOWN_POLICY_QTP0004)
+    qt_policy(SET QTP0004 NEW)
+endif()
 
 # 可执行文件与 QML 模块目录分别输出，避免名称冲突。
 qt_add_executable(${PROJECT_NAME})
